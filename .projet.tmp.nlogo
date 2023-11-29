@@ -87,17 +87,17 @@ to go
     fd 3
     rt random 180
     lt random 180
+    check-boundary
   ]
-  move-ants
+
   check-food
   wait 0.2
 end
 
 to move-ants
   ask ants [
-    forward 1 ; move forward by 1 step, adjust as needed
-    check-boundary ; call a procedure to check if ants hit the boundary
-    ; Add obstacle avoidance mechanism here
+    forward 1
+     ; call a procedure to check if ants hit the boundary
   ]
 end
 
@@ -129,12 +129,6 @@ to check-food
     ]
   ]
 end
-
-
-
-
-
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 297
