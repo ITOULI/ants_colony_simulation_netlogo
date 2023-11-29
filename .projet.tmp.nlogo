@@ -63,7 +63,7 @@ end
 to setup-food-sources
   create-food-sources Abundance-of-food [
     setxy random-xcor random-ycor
-    set shape "leaf"
+    set shape "grain"
     set color 63
     set size 4
   ]
@@ -72,9 +72,9 @@ end
 to setup-obstacles
   create-obstacles Number-of-obstacles [
     setxy random-xcor random-ycor
-    set shape "tile stones"
+    set shape "stone"
     set color 33
-    set size 2
+    set size random 4 + 2
   ]
 end
 
@@ -118,7 +118,10 @@ to check-food
         create-link-with target-food [tie]
       ] [
         ; Go back to the nest
-        face patch nest-x nest-y
+        ask target-food [
+          face patch nest-x nest-y
+
+        ]
         ;stock food
         if distance patch nest-x nest-y < 1 [
           set food-stock food-stock + 1
@@ -158,10 +161,10 @@ ticks
 30.0
 
 BUTTON
-47
-148
-110
-181
+48
+131
+111
+164
 NIL
 setup
 NIL
@@ -175,10 +178,10 @@ NIL
 1
 
 SLIDER
-22
-286
-194
-319
+47
+249
+219
+282
 population
 population
 0
@@ -200,10 +203,10 @@ Ants colony simulation
 1
 
 BUTTON
-152
-147
-215
-180
+153
+130
+216
+163
 NIL
 go
 T
@@ -217,40 +220,40 @@ NIL
 1
 
 SLIDER
-63
-77
-235
-110
+50
+74
+222
+107
 Abundance-of-food
 Abundance-of-food
 0
 100
-25.0
+20.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-36
-220
-208
-253
+47
+190
+219
+223
 Number-of-obstacles
 Number-of-obstacles
 0
 100
-50.0
+30.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
+1120
+23
+1194
 68
-381
-142
-426
 NIL
 food-stock
 17
@@ -464,6 +467,13 @@ Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
 
+grain
+true
+0
+Polygon -1184463 true false 181 61 155 66 125 75 101 93 89 120 76 156 77 192 88 218 103 249 113 251 150 235 191 196 208 157 214 120 213 88 204 59 198 60
+Polygon -955883 true false 201 59 190 97 170 141 137 198 110 240 139 213 167 173 194 118
+Polygon -1 true false 83 177 97 127 130 80 104 102 90 131 82 177
+
 house
 false
 0
@@ -545,6 +555,35 @@ star
 false
 0
 Polygon -7500403 true true 151 1 185 108 298 108 207 175 242 282 151 216 59 282 94 175 3 108 116 108
+
+stone
+true
+10
+Polygon -6459832 true false 226 93 226 123 233 135 242 152 256 183 256 213 256 213 196 273 91 258 46 198 46 198 61 93 151 18 226 48 226 93
+Polygon -16777216 true false 211 131 221 141 230 151 238 160 251 182 251 182 253 207 244 224 212 254 212 254 196 270 196 270 157 265 157 265 101 252 101 252 78 226 78 226 104 248 104 248 177 261 194 261 194 261 239 220 239 220 247 205 247 205 242 182 231 164
+Polygon -1 true false 150 29 98 66 73 90 73 90 55 157 55 157 55 182 59 153 59 153 79 99
+Line -16777216 false 232 178 245 205
+Line -16777216 false 228 186 241 213
+Line -16777216 false 225 195 238 222
+Line -16777216 false 218 200 231 227
+Line -16777216 false 211 207 224 234
+Line -16777216 false 236 169 249 196
+Line -16777216 false 205 213 218 240
+Line -16777216 false 199 219 212 246
+Line -16777216 false 193 225 206 252
+Line -16777216 false 187 230 200 257
+Line -16777216 false 182 237 193 259
+Line -16777216 false 156 238 165 257
+Line -16777216 false 149 241 157 258
+Line -16777216 false 140 239 148 256
+Line -16777216 false 131 239 138 253
+Line -16777216 false 123 239 130 252
+Line -16777216 false 114 236 121 249
+Line -16777216 false 105 234 114 248
+Line -16777216 false 97 232 104 245
+Line -16777216 false 176 239 187 261
+Line -16777216 false 170 239 181 261
+Line -16777216 false 162 238 173 260
 
 target
 false
