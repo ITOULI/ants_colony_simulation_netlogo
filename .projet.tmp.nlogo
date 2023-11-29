@@ -16,6 +16,9 @@ globals [
 ants-own[
   has-food
 ]
+food-sources-own[
+  nb-links
+]
 ;======================;
 ;---Setup procedures---;
 ;======================;
@@ -65,7 +68,8 @@ to setup-food-sources
     setxy random-xcor random-ycor
     set shape "grain"
     set color 63
-    set size 4
+    set size 3
+    set nb-links 0
   ]
 end
 
@@ -87,17 +91,17 @@ to go
     fd 3
     rt random 180
     lt random 180
-    check-boundary
   ]
-
+  move-ants
   check-food
   wait 0.2
 end
 
 to move-ants
   ask ants [
-    forward 1
-     ; call a procedure to check if ants hit the boundary
+    forward 1 ; move forward by 1 step, adjust as needed
+    check-boundary ; call a procedure to check if ants hit the boundary
+    ; Add obstacle avoidance mechanism here
   ]
 end
 
@@ -111,19 +115,26 @@ end
 to check-food
   ask ants [
     let target-food one-of food-sources in-radius 3
+
+
     if target-food != nobody [
       ifelse has-food = 0 [
         ; Pick up food
-        set has-food 1
-        create-link-with target-food [tie]
+        ;set has-food 1
+        ;create-link-with target-food [tie]
+        if count food-source-links < 3 [
+          set has-food 1
+          create-link-with target-food [tie]
+          ask target-food [set nb-links nb-links + 1]
+        ]
       ] [
         ; Go back to the nest
+        face patch nest-x nest-y
         ask target-food [
           face patch nest-x nest-y
-
         ]
         ;stock food
-        if distance patch nest-x nest-y < 1 [
+        if distance patch nest-x nest-y < 3 [
           set food-stock food-stock + 1
           ask target-food [die]
           set has-food 0 ; Reset has-food flag
@@ -186,7 +197,7 @@ population
 population
 0
 100
-25.0
+48.0
 1
 1
 NIL
@@ -228,7 +239,7 @@ Abundance-of-food
 Abundance-of-food
 0
 100
-20.0
+54.0
 1
 1
 NIL
@@ -243,7 +254,7 @@ Number-of-obstacles
 Number-of-obstacles
 0
 100
-30.0
+0.0
 1
 1
 NIL

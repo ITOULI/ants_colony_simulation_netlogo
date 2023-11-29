@@ -16,6 +16,9 @@ globals [
 ants-own[
   has-food
 ]
+food-sources-own[
+  nb-links
+]
 ;======================;
 ;---Setup procedures---;
 ;======================;
@@ -66,6 +69,7 @@ to setup-food-sources
     set shape "grain"
     set color 63
     set size 4
+    set nb-links 0
   ]
 end
 
@@ -115,7 +119,7 @@ to check-food
       ifelse has-food = 0 [
         ; Pick up food
         set has-food 1
-        create-link-with target-food [tie]
+        create-link-with target-food w[tie]
       ] [
         ; Go back to the nest
         face patch nest-x nest-y
