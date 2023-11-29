@@ -118,9 +118,9 @@ to check-food
         create-link-with target-food [tie]
       ] [
         ; Go back to the nest
-        face patch nest-x nest-y
         ask target-food [
           face patch nest-x nest-y
+
         ]
         ;stock food
         if distance patch nest-x nest-y < 1 [
