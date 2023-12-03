@@ -4,6 +4,7 @@ breed [obstacles obstacle]
 
 
 patches-own [
+  pheromons
   nest-scent
 ]
 
@@ -67,7 +68,6 @@ to setup-food-sources
   create-food-sources Abundance-of-food [
     setxy random-xcor random-ycor
     set shape "grain"
-    set color 63
     set size 4
     set nb-links 0
   ]
@@ -94,6 +94,7 @@ to go
   ]
   move-ants
   check-food
+  tick
   wait 0.2
 end
 
@@ -115,17 +116,23 @@ end
 to check-food
   ask ants [
     let target-food one-of food-sources in-radius 3
-    if target-food != nobody [
+    if target-food != nobody[
       ifelse has-food = 0 [
+        let food-source-links [nb-links] of target-food
+
+        if food-source-links < 3[
         ; Pick up food
         set has-food 1
-        create-link-with target-food w[tie]
+        create-link-with target-food [tie]
+        ask target-food [set nb-links nb-links + 1]
+        ]
       ] [
         ; Go back to the nest
-        face patch nest-x nest-y
-        ask target-food [
-          face patch nest-x nest-y
-        ]
+        uphill-nest-scent
+        ;face patch nest-x nest-y
+        ;ask target-food [
+         ; face patch nest-x nest-y
+        ;]
         ;stock food
         if distance patch nest-x nest-y < 1 [
           set food-stock food-stock + 1
@@ -135,6 +142,23 @@ to check-food
       ]
     ]
   ]
+end
+
+;; sniff left and right, and go where the strongest smell is
+to uphill-nest-scent  ;; turtle procedure
+  let scent-ahead nest-scent-at-angle   0
+  let scent-right nest-scent-at-angle  45
+  let scent-left  nest-scent-at-angle -45
+  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
+  [ ifelse scent-right > scent-left
+    [ rt 45 ]
+    [ lt 45 ] ]
+end
+
+to-report nest-scent-at-angle [angle]
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [nest-scent] of p
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
