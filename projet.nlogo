@@ -103,6 +103,7 @@ to move-ants
     forward 1 ; move forward by 1 step, adjust as needed
     check-boundary ; call a procedure to check if ants hit the boundary
     ; Add obstacle avoidance mechanism here
+    check-obstacles
   ]
 end
 
@@ -115,12 +116,12 @@ end
 
 to check-food
   ask ants [
-    let target-food one-of food-sources in-radius 3
+    let target-food one-of food-sources in-radius 2
     if target-food != nobody[
       ifelse has-food = 0 [
         let food-source-links [nb-links] of target-food
 
-        if food-source-links < 3[
+        if food-source-links < 2[
         ; Pick up food
         set has-food 1
         create-link-with target-food [tie]
@@ -128,11 +129,17 @@ to check-food
         ]
       ] [
         ; Go back to the nest
-        uphill-nest-scent
+
+        let max-patch max-one-of neighbors [nest-scent]
+        face max-patch
+        forward 1
+
         ;face patch nest-x nest-y
-        ;ask target-food [
-         ; face patch nest-x nest-y
-        ;]
+
+        ask target-food [
+          face max-patch
+        ]
+
         ;stock food
         if distance patch nest-x nest-y < 1 [
           set food-stock food-stock + 1
@@ -144,21 +151,13 @@ to check-food
   ]
 end
 
-;; sniff left and right, and go where the strongest smell is
-to uphill-nest-scent  ;; turtle procedure
-  let scent-ahead nest-scent-at-angle   0
-  let scent-right nest-scent-at-angle  45
-  let scent-left  nest-scent-at-angle -45
-  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
-  [ ifelse scent-right > scent-left
-    [ rt 45 ]
-    [ lt 45 ] ]
-end
-
-to-report nest-scent-at-angle [angle]
-  let p patch-right-and-ahead angle 1
-  if p = nobody [ report 0 ]
-  report [nest-scent] of p
+to check-obstacles
+  ask ants [
+    let target-obstacle one-of obstacles in-radius 3
+    if target-obstacle != nobody[
+       right random 180
+    ]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -214,7 +213,7 @@ population
 population
 0
 100
-25.0
+41.0
 1
 1
 NIL
@@ -255,8 +254,8 @@ SLIDER
 Abundance-of-food
 Abundance-of-food
 0
-100
-20.0
+70
+31.0
 1
 1
 NIL
@@ -270,8 +269,8 @@ SLIDER
 Number-of-obstacles
 Number-of-obstacles
 0
-100
-30.0
+50
+50.0
 1
 1
 NIL
