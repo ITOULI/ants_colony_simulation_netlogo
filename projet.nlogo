@@ -7,7 +7,6 @@ breed [obstacles obstacle]
 patches-own [
   ppheromones
   nest-scent
-  food-scent
 ]
 
 globals [
@@ -42,8 +41,6 @@ to setup-patches
   ask patches [
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
-    set food-scent 0
-
   ]
 end
 
@@ -76,7 +73,6 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
-    set food-scent 20 - distance patch-here
   ]
 end
 
@@ -99,7 +95,6 @@ end
 
 to go
   move-ants
-  ;check-food
   touch-input
   tick
   wait 0.05
@@ -115,27 +110,16 @@ to move-ants
       face max-patch
       let target-patches patches in-radius 1 ; Define patches within a radius around the ant
       ask target-patches [
-        set ppheromones ppheromones + 15  ; Increase pheromone levels on nearby patches
+        set ppheromones ppheromones + 10  ; Increase pheromone levels on nearby patches
       ]
     ][
-      let target-patches patches in-radius 1
-      let max-patch-with-pheromone max-one-of target-patches [ppheromones]
       if (ppheromones >= 0.05) [ uphill-pheromones ]
-      ifelse ppheromones > 0 [
-        ;let target-patches2 patches in-cone 180 2
-        ;let max-pheromone max-one-of target-patches2 [ppheromones]
-        ;face max-pheromone
-        ;ask patch-ahead 1 [ set ppheromones ppheromones - 1 ] ; Decrease pheromone levels as the ant moves
-
-      ] [
-        let max-food-patch max-one-of neighbors [food-scent]
-        face max-food-patch
         check-food
       ]
     ]
-  ]
    visualize-pheromones
 end
+
 
 to uphill-pheromones  ; turtle procedure. sniff left and right, and go where the strongest smell is
   let scent-ahead chemical-scent-at-angle   0
@@ -300,7 +284,7 @@ population
 population
 0
 100
-57.0
+15.0
 1
 1
 NIL
