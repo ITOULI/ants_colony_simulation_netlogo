@@ -1,3 +1,4 @@
+breed [ nests nest]
 breed [ants ant]
 breed [food-sources food-source]
 breed [obstacles obstacle]
@@ -6,6 +7,7 @@ breed [obstacles obstacle]
 patches-own [
   ppheromones
   nest-scent
+  food-scent
 ]
 
 globals [
@@ -18,6 +20,7 @@ ants-own[
   has-food
 ]
 food-sources-own[
+
   nb-links
 ]
 ;======================;
@@ -39,13 +42,15 @@ to setup-patches
   ask patches [
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
+    set food-scent 0
+
   ]
 end
 
 to setup-nest
   set nest-x random-xcor
   set nest-y random-ycor
-  create-turtles 1 [
+  create-nests 1 [
     set shape "circle 2"
     setxy nest-x nest-y
     set size 2
@@ -71,6 +76,7 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
+    set food-scent 20 - distance patch-here
   ]
 end
 
@@ -92,36 +98,60 @@ end
 ;======================;
 
 to go
-
   move-ants
-  check-food
-
+  ;check-food
+  touch-input
   tick
   wait 0.05
 end
 
 to move-ants
   ask ants [
-    forward 1 ; move forward by 1 step, adjust as needed
-    check-boundary ; call a procedure to check if ants hit the boundary
-    ; Add obstacle avoidance mechanism here
+    forward 1
+    ; Add obstacle avoidance mechanism
     check-obstacles
-
-    if has-food = 1 [
+    ifelse has-food = 1 [
       let max-patch max-one-of neighbors [nest-scent]
       face max-patch
+      let target-patches patches in-radius 1 ; Define patches within a radius around the ant
+      ask target-patches [
+        set ppheromones ppheromones + 15  ; Increase pheromone levels on nearby patches
+      ]
+    ][
+      let target-patches patches in-radius 1
+      let max-patch-with-pheromone max-one-of target-patches [ppheromones]
+      if (ppheromones >= 0.05) [ uphill-pheromones ]
+      ifelse ppheromones > 0 [
+        ;let target-patches2 patches in-cone 180 2
+        ;let max-pheromone max-one-of target-patches2 [ppheromones]
+        ;face max-pheromone
+        ;ask patch-ahead 1 [ set ppheromones ppheromones - 1 ] ; Decrease pheromone levels as the ant moves
 
-      ask patch-here [ set ppheromones ppheromones + 1 ]
+      ] [
+        let max-food-patch max-one-of neighbors [food-scent]
+        face max-food-patch
+        check-food
+      ]
     ]
   ]
    visualize-pheromones
 end
 
-to check-boundary
-  if xcor < min-pxcor or xcor > max-pxcor or ycor < min-pycor or ycor > max-pycor [
-    ; reverse direction if hitting the boundary
-  set heading (heading + 180) mod 360
+to uphill-pheromones  ; turtle procedure. sniff left and right, and go where the strongest smell is
+  let scent-ahead chemical-scent-at-angle   0
+  let scent-right chemical-scent-at-angle  45
+  let scent-left  chemical-scent-at-angle -45
+  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
+  [
+    ifelse scent-right > scent-left
+      [ rt 45 ]
+      [ lt 45 ]
   ]
+end
+to-report chemical-scent-at-angle [angle] ; reports the amount of pheromone in a certain direction
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [ppheromones] of p
 end
 
 to check-food
@@ -130,25 +160,15 @@ to check-food
     if target-food != nobody[
       ifelse has-food = 0 [
         let food-source-links [nb-links] of target-food
-
-        if food-source-links < 2[
+        if food-source-links < 1[
         ; Pick up food
         set has-food 1
         create-link-with target-food [tie]
         ask target-food [set nb-links nb-links + 1]
         ]
       ] [
-        ; Go back to the nest
-        ;forward 1
-
-        ;face patch nest-x nest-y
-        let max-patch max-one-of neighbors [nest-scent]
-        ask target-food [
-          face max-patch
-        ]
-
         ;stock food
-        if distance patch nest-x nest-y < 1 [
+        if distance patch nest-x nest-y < 3 [
           set food-stock food-stock + 1
           ask target-food [die]
           set has-food 0 ; Reset has-food flag
@@ -161,18 +181,68 @@ end
 to visualize-pheromones
   ask patches [
     ifelse ppheromones > 0 [
-      set pcolor scale-color yellow ppheromones 0 100
-    ] [
+      let lifespan 200 ; Set the lifespan of pheromones (adjust as needed)
+      let age min (list ppheromones lifespan)
+      let transparency 1 - (age / lifespan) ; Calculate transparency based on age
+
+      ifelse age > 100 [
+        set pcolor scale-color yellow (age - 100) 100 200 ; Transition to yellow after 50 ticks
+      ] [
+        set pcolor scale-color white age 0 100 ; Transition from white to yellow
+      ]
+
+      set pcolor (pcolor + (transparency * 50)) ; Apply transparency as an overlay
+
+      set ppheromones (ppheromones - 1)
+      if ppheromones < 0 [
+        set ppheromones 0
+      ]
+      ; Decrease pheromone lifespan
+    ]  [
       set pcolor 65  ; Reset patches without pheromones to default color
     ]
   ]
 end
+
+
+
+
+
 
 to check-obstacles
   ask ants [
     let target-obstacle one-of obstacles in-radius 3
     if target-obstacle != nobody[
        right random 180
+    ]
+  ]
+end
+
+; handles user touch input for chemicals, flowers, and vinegar
+to touch-input
+  if mouse-down?
+  [
+    ask patch mouse-xcor mouse-ycor
+    [
+    (ifelse
+      add = "Pheromones"
+      [
+        ask neighbors [set ppheromones ppheromones + 60  ]
+      ]
+      add = "food"
+      [
+        if not any? food-sources in-radius 3  [sprout-food-sources 1
+          [
+            set shape "grain"
+            set size 4
+          ]
+        ]
+      ]
+      add = "Vinegar"
+      [
+        set ppheromones 0 ask neighbors [set ppheromones 0  ]
+      ]
+    )
     ]
   ]
 end
@@ -191,8 +261,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 -30
 30
@@ -230,7 +300,7 @@ population
 population
 0
 100
-2.0
+57.0
 1
 1
 NIL
@@ -303,6 +373,16 @@ food-stock
 17
 1
 11
+
+CHOOSER
+48
+310
+186
+355
+Add
+Add
+"food" "Pheromones" "Vinegar"
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
