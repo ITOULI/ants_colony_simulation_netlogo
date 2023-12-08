@@ -92,16 +92,12 @@ end
 ;======================;
 
 to go
-  ask ants [
-    fd 3
-    rt random 180
-    lt random 180
-  ]
+
   move-ants
   check-food
 
   tick
-  wait 0.2
+  wait 0.05
 end
 
 to move-ants
