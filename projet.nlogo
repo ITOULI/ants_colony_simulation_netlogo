@@ -103,6 +103,7 @@ end
 to move-ants
   ask ants [
     forward 1
+    wiggle
     ; Add obstacle avoidance mechanism
     check-obstacles
     ifelse has-food = 1 [
@@ -118,6 +119,12 @@ to move-ants
       ]
     ]
    visualize-pheromones
+end
+
+to wiggle  ;; turtle procedure
+  rt random 40
+  lt random 40
+  if not can-move? 1 [ rt 180 ]
 end
 
 
@@ -284,7 +291,7 @@ population
 population
 0
 100
-15.0
+2.0
 1
 1
 NIL
@@ -359,14 +366,14 @@ food-stock
 11
 
 CHOOSER
-48
-310
-186
-355
+46
+311
+220
+356
 Add
 Add
 "food" "Pheromones" "Vinegar"
-1
+2
 
 @#$#@#$#@
 ## WHAT IS IT?
