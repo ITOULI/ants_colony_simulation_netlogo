@@ -107,8 +107,7 @@ to move-ants
     ; Add obstacle avoidance mechanism
     check-obstacles
     ifelse has-food = 1 [
-      let max-patch max-one-of neighbors [nest-scent]
-      face max-patch
+      uphill-nest-scent
       let target-patches patches in-radius 1 ; Define patches within a radius around the ant
       ask target-patches [
         set ppheromones ppheromones + 10  ; Increase pheromone levels on nearby patches
@@ -127,6 +126,21 @@ to wiggle  ;; turtle procedure
   if not can-move? 1 [ rt 180 ]
 end
 
+to uphill-nest-scent  ;; turtle procedure
+  let scent-ahead nest-scent-at-angle   0
+  let scent-right nest-scent-at-angle  45
+  let scent-left  nest-scent-at-angle -45
+  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
+  [ ifelse scent-right > scent-left
+    [ rt 45 ]
+    [ lt 45 ] ]
+end
+
+to-report nest-scent-at-angle [angle]
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [nest-scent] of p
+end
 
 to uphill-pheromones  ; turtle procedure. sniff left and right, and go where the strongest smell is
   let scent-ahead chemical-scent-at-angle   0
@@ -159,7 +173,7 @@ to check-food
         ]
       ] [
         ;stock food
-        if distance patch nest-x nest-y < 3 [
+        if distance patch nest-x nest-y < 4 [
           set food-stock food-stock + 1
           ask target-food [die]
           set has-food 0 ; Reset has-food flag
@@ -218,7 +232,7 @@ to touch-input
     (ifelse
       add = "Pheromones"
       [
-        ask neighbors [set ppheromones ppheromones + 60  ]
+        ask neighbors [set ppheromones ppheromones + 15  ]
       ]
       add = "food"
       [
@@ -252,8 +266,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -30
 30
@@ -291,7 +305,7 @@ population
 population
 0
 100
-2.0
+29.0
 1
 1
 NIL
@@ -373,7 +387,43 @@ CHOOSER
 Add
 Add
 "food" "Pheromones" "Vinegar"
-2
+0
+
+PLOT
+1122
+95
+1322
+245
+ants 
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count ants"
+
+PLOT
+1126
+273
+1326
+423
+food
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count food-sources"
 
 @#$#@#$#@
 ## WHAT IS IT?
