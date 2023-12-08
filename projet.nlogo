@@ -4,7 +4,7 @@ breed [obstacles obstacle]
 
 
 patches-own [
-  pheromons
+  ppheromones
   nest-scent
 ]
 
@@ -31,6 +31,7 @@ to setup
   setup-food-sources
   setup-patches
   setup-obstacles
+  setup-pheromones
   reset-ticks
 end
 
@@ -58,7 +59,7 @@ to setup-ants
   create-ants population[
     setxy nest-x nest-y
     set size 2
-    set color brown
+    set color black
     set has-food 0
     set direction random 360
   ]
@@ -82,6 +83,10 @@ to setup-obstacles
   ]
 end
 
+to setup-pheromones
+  ask patches [ set ppheromones 0 ]
+end
+
 ;======================;
 ;----Go procedures-----;
 ;======================;
@@ -94,6 +99,7 @@ to go
   ]
   move-ants
   check-food
+
   tick
   wait 0.2
 end
@@ -104,7 +110,15 @@ to move-ants
     check-boundary ; call a procedure to check if ants hit the boundary
     ; Add obstacle avoidance mechanism here
     check-obstacles
+
+    if has-food = 1 [
+      let max-patch max-one-of neighbors [nest-scent]
+      face max-patch
+
+      ask patch-here [ set ppheromones ppheromones + 1 ]
+    ]
   ]
+   visualize-pheromones
 end
 
 to check-boundary
@@ -129,13 +143,10 @@ to check-food
         ]
       ] [
         ; Go back to the nest
-
-        let max-patch max-one-of neighbors [nest-scent]
-        face max-patch
-        forward 1
+        ;forward 1
 
         ;face patch nest-x nest-y
-
+        let max-patch max-one-of neighbors [nest-scent]
         ask target-food [
           face max-patch
         ]
@@ -147,6 +158,16 @@ to check-food
           set has-food 0 ; Reset has-food flag
         ]
       ]
+    ]
+  ]
+end
+
+to visualize-pheromones
+  ask patches [
+    ifelse ppheromones > 0 [
+      set pcolor scale-color yellow ppheromones 0 100
+    ] [
+      set pcolor 65  ; Reset patches without pheromones to default color
     ]
   ]
 end
@@ -188,9 +209,9 @@ ticks
 30.0
 
 BUTTON
-48
+47
 131
-111
+110
 164
 NIL
 setup
@@ -213,7 +234,7 @@ population
 population
 0
 100
-41.0
+2.0
 1
 1
 NIL
@@ -270,7 +291,7 @@ Number-of-obstacles
 Number-of-obstacles
 0
 50
-50.0
+9.0
 1
 1
 NIL
