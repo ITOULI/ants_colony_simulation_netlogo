@@ -1,4 +1,4 @@
-breed [ nests nest]
+breed [nests nest]
 breed [ants ant]
 breed [food-sources food-source]
 breed [obstacles obstacle]
@@ -34,7 +34,6 @@ to setup
   setup-food-sources
   setup-patches
   setup-obstacles
-  setup-pheromones
   reset-ticks
 end
 
@@ -42,6 +41,7 @@ to setup-patches
   ask patches [
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
+    set ppheromones 0
     set food-scent 0
   ]
 end
@@ -76,7 +76,7 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
-    set food-scent 50 - distance patch-here
+    set food-scent 200 - distance patch-here
   ]
 end
 
@@ -87,10 +87,6 @@ to setup-obstacles
     set color 33
     set size random 4 + 2
   ]
-end
-
-to setup-pheromones
-  ask patches [ set ppheromones 0 ]
 end
 
 ;======================;
@@ -366,7 +362,7 @@ population
 population
 0
 100
-2.0
+14.0
 1
 1
 NIL
