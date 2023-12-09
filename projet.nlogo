@@ -76,7 +76,7 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
-    set food-scent 200 - distance patch-here
+    ;set food-scent 200 - distance patch-here
   ]
 end
 
@@ -109,7 +109,7 @@ to move-ants
     set health-points health-points - 0.1
     if health-points <= 0 [die]
     if (distancexy nest-x nest-y ) <= 2[
-      if health-points <= 98 and health-points > 0 and food-stock > 1 [ set health-points health-points + 1 set food-stock food-stock - 0.02]
+      if health-points <= 98 and food-stock > 1 [ set health-points health-points + 1 set food-stock food-stock - 0.02]
     ]
     ifelse has-food = 1 [
       uphill-nest-scent
@@ -167,21 +167,7 @@ to-report chemical-scent-at-angle [angle] ; reports the amount of pheromone in a
 end
 
 
-to uphill-food-scent
-  let left-food-scent food-scent-at-angle (-45)
-  let right-food-scent food-scent-at-angle 45
-  let current-food-scent food-scent-at-angle 0
-
-  if (current-food-scent > left-food-scent) or (current-food-scent > right-food-scent) [
-    ifelse left-food-scent > right-food-scent [
-      rt 45
-    ] [
-      lt 45
-    ]
-  ]
-end
-
-to uuphill-food-scent  ; turtle procedure. sniff left and right, and go where the strongest smell is
+to uphill-food-scent  ; turtle procedure. sniff left and right, and go where the strongest smell is
   let scent-ahead food-scent-at-angle   0
   let scent-right food-scent-at-angle  45
   let scent-left  food-scent-at-angle -45
@@ -200,16 +186,29 @@ end
 
 to update-food-scent
   ask food-sources [
-    set food-scent food-scent * (100 - 1) / 100
+    set food-scent food-scent * (100 - 90) / 100
   ]
   ask patches [
     ifelse any? food-sources in-radius 1 [
       set food-scent food-scent + 50
     ][
-      set food-scent food-scent * (100 - 1) / 100
+      set food-scent food-scent * (100 - 90) / 100
     ]
   ]
 end
+
+to update-food-scent-second-one
+  diffuse food-scent (diffusion-rate / 100)
+  ask patches [
+    let food-sources-influence sum [food-scent] of food-sources in-radius 1
+    ifelse food-sources-influence > 0 [
+      set food-scent (food-scent + food-sources-influence) / 2
+    ]  [
+      set food-scent food-scent * (100 - evaporation-rate) / 100
+    ]
+  ]
+end
+
 
 to check-food
   ask ants [
@@ -256,7 +255,7 @@ to check-obstacles
   ask ants [
     let target-obstacle one-of obstacles in-radius 3
     if target-obstacle != nobody[
-       right random 180
+       right random 90
     ]
   ]
 end
@@ -292,7 +291,7 @@ to touch-input
   ]
 end
 
-to add_food [some prob] ; adds some flowers to the view at some rate with prob likelihood.
+to add_food [some prob] ; adds some grains to the view at some rate with prob likelihood.
 
   if random prob < 1
   [
@@ -362,7 +361,7 @@ population
 population
 0
 100
-14.0
+6.0
 1
 1
 NIL
@@ -404,7 +403,7 @@ Abundance-of-food
 Abundance-of-food
 0
 70
-1.0
+6.0
 1
 1
 NIL
@@ -419,7 +418,7 @@ Number-of-obstacles
 Number-of-obstacles
 0
 50
-0.0
+3.0
 1
 1
 NIL
@@ -515,7 +514,7 @@ HORIZONTAL
 SLIDER
 30
 469
-230
+262
 502
 amounts-of-food-added-in-100-ticks
 amounts-of-food-added-in-100-ticks
