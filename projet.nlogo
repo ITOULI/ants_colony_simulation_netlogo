@@ -96,6 +96,7 @@ end
 to go
   move-ants
   touch-input
+  add_food 1 50
   tick
   wait 0.05
 end
@@ -110,7 +111,7 @@ to move-ants
       uphill-nest-scent
       let target-patches patches in-radius 1 ; Define patches within a radius around the ant
       ask target-patches [
-        set ppheromones ppheromones + 10  ; Increase pheromone levels on nearby patches
+        set ppheromones ppheromones + 60  ; Increase pheromone levels on nearby patches
       ]
     ][
       if (ppheromones >= 0.05) [ uphill-pheromones ]
@@ -237,6 +238,21 @@ to touch-input
     ]
   ]
 end
+
+to add_food [some prob] ; adds some flowers to the view at some rate with prob likelihood.
+
+  if random prob < 1
+  [
+    ask n-of some patches
+    [
+      sprout-food-sources 1
+      [
+        set shape "grain"
+        set size 4
+      ]
+    ]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 297
@@ -291,7 +307,7 @@ population
 population
 0
 100
-25.0
+7.0
 1
 1
 NIL
@@ -348,7 +364,7 @@ Number-of-obstacles
 Number-of-obstacles
 0
 50
-9.0
+0.0
 1
 1
 NIL
@@ -376,10 +392,10 @@ Add
 1
 
 PLOT
-1122
-95
-1322
-245
+1108
+71
+1495
+305
 ants 
 NIL
 NIL
@@ -394,13 +410,13 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count ants"
 
 PLOT
-1126
-273
-1326
-423
+1109
+315
+1496
+550
+abundance of food out of nest 
+time
 food
-NIL
-NIL
 0.0
 10.0
 0.0
@@ -420,7 +436,7 @@ evaporation-rate
 evaporation-rate
 0
 100
-13.0
+24.0
 1
 1
 NIL
@@ -435,7 +451,7 @@ diffusion-rate
 diffusion-rate
 0
 100
-10.0
+13.0
 1
 1
 NIL
