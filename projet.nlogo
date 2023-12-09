@@ -7,6 +7,7 @@ breed [obstacles obstacle]
 patches-own [
   ppheromones
   nest-scent
+  food-scent
 ]
 
 globals [
@@ -17,9 +18,9 @@ globals [
 ]
 ants-own[
   has-food
+  health-points
 ]
 food-sources-own[
-
   nb-links
 ]
 ;======================;
@@ -41,6 +42,7 @@ to setup-patches
   ask patches [
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
+    set food-scent 0
   ]
 end
 
@@ -64,6 +66,7 @@ to setup-ants
     set color black
     set has-food 0
     set direction random 360
+    set health-points 100
   ]
 end
 
@@ -73,6 +76,7 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
+    set food-scent 50 - distance patch-here
   ]
 end
 
@@ -105,8 +109,12 @@ to move-ants
   ask ants [
     forward 1
     wiggle
-    ; Add obstacle avoidance mechanism
     check-obstacles
+    set health-points health-points - 0.1
+    if health-points <= 0 [die]
+    if (distancexy nest-x nest-y ) <= 2[
+      if health-points <= 98 and health-points > 0 and food-stock > 1 [ set health-points health-points + 1 set food-stock food-stock - 0.02]
+    ]
     ifelse has-food = 1 [
       uphill-nest-scent
       let target-patches patches in-radius 1 ; Define patches within a radius around the ant
@@ -114,11 +122,13 @@ to move-ants
         set ppheromones ppheromones + 60  ; Increase pheromone levels on nearby patches
       ]
     ][
-      if (ppheromones >= 0.05) [ uphill-pheromones ]
-        check-food
+
+      ifelse (ppheromones >= 0.05) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
+      check-food
       ]
     ]
-   visualize-pheromones
+  update-food-scent
+  visualize-pheromones
 end
 
 to wiggle  ;; turtle procedure
@@ -160,6 +170,51 @@ to-report chemical-scent-at-angle [angle] ; reports the amount of pheromone in a
   report [ppheromones] of p
 end
 
+
+to uphill-food-scent
+  let left-food-scent food-scent-at-angle (-45)
+  let right-food-scent food-scent-at-angle 45
+  let current-food-scent food-scent-at-angle 0
+
+  if (current-food-scent > left-food-scent) or (current-food-scent > right-food-scent) [
+    ifelse left-food-scent > right-food-scent [
+      rt 45
+    ] [
+      lt 45
+    ]
+  ]
+end
+
+to uuphill-food-scent  ; turtle procedure. sniff left and right, and go where the strongest smell is
+  let scent-ahead food-scent-at-angle   0
+  let scent-right food-scent-at-angle  45
+  let scent-left  food-scent-at-angle -45
+  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
+  [
+    ifelse scent-right > scent-left
+      [ rt 45 ]
+      [ lt 45 ]
+  ]
+end
+to-report food-scent-at-angle [angle] ; reports the amount of pheromone in a certain direction
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [food-scent] of p
+end
+
+to update-food-scent
+  ask food-sources [
+    set food-scent food-scent * (100 - 1) / 100
+  ]
+  ask patches [
+    ifelse any? food-sources in-radius 1 [
+      set food-scent food-scent + 50
+    ][
+      set food-scent food-scent * (100 - 1) / 100
+    ]
+  ]
+end
+
 to check-food
   ask ants [
     let target-food one-of food-sources in-radius 2
@@ -170,7 +225,7 @@ to check-food
         ; Pick up food
         set has-food 1
         create-link-with target-food [tie]
-        ask target-food [set nb-links nb-links + 1]
+        ask target-food [set nb-links nb-links + 1 set food-scent 0]
         ]
       ] [
         ;stock food
@@ -227,6 +282,8 @@ to touch-input
           [
             set shape "grain"
             set size 4
+            set nb-links 0
+            set food-scent 200 - distance patch-here
           ]
         ]
       ]
@@ -249,6 +306,8 @@ to add_food [some prob] ; adds some flowers to the view at some rate with prob l
       [
         set shape "grain"
         set size 4
+        set nb-links 0
+        set food-scent 200 - distance patch-here
       ]
     ]
   ]
@@ -307,7 +366,7 @@ population
 population
 0
 100
-7.0
+2.0
 1
 1
 NIL
@@ -349,7 +408,7 @@ Abundance-of-food
 Abundance-of-food
 0
 70
-5.0
+1.0
 1
 1
 NIL
@@ -377,7 +436,7 @@ MONITOR
 68
 NIL
 food-stock
-17
+5
 1
 11
 
@@ -389,7 +448,7 @@ CHOOSER
 Add
 Add
 "food" "Pheromones" "Vinegar"
-1
+0
 
 PLOT
 1108
@@ -464,9 +523,9 @@ SLIDER
 502
 amounts-of-food-added-in-100-ticks
 amounts-of-food-added-in-100-ticks
-1
+0
 15
-8.0
+0.0
 1
 1
 NIL
