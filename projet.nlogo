@@ -96,7 +96,7 @@ end
 to go
   move-ants
   touch-input
-  add_food 1 50
+  add_food amounts-of-food-added-in-100-ticks 100
   tick
   wait 0.05
 end
@@ -452,6 +452,21 @@ diffusion-rate
 0
 100
 13.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+30
+469
+230
+502
+amounts-of-food-added-in-100-ticks
+amounts-of-food-added-in-100-ticks
+1
+15
+8.0
 1
 1
 NIL
