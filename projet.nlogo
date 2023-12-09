@@ -183,35 +183,21 @@ to check-food
   ]
 end
 
+
 to visualize-pheromones
-  ask patches [
-    ifelse ppheromones > 0 [
-      let lifespan 200 ; Set the lifespan of pheromones (adjust as needed)
-      let age min (list ppheromones lifespan)
-      let transparency 1 - (age / lifespan) ; Calculate transparency based on age
+  diffuse ppheromones (diffusion-rate / 100)
 
-      ifelse age > 100 [
-        set pcolor scale-color yellow (age - 100) 100 200 ; Transition to yellow after 50 ticks
-      ] [
-        set pcolor scale-color white age 0 100 ; Transition from white to yellow
-      ]
-
-      set pcolor (pcolor + (transparency * 50)) ; Apply transparency as an overlay
-
-      set ppheromones (ppheromones - 1)
-      if ppheromones < 0 [
-        set ppheromones 0
-      ]
-      ; Decrease pheromone lifespan
-    ]  [
-      set pcolor 65  ; Reset patches without pheromones to default color
+  ask patches
+  [
+    ifelse ppheromones > 2 [
+      set ppheromones ppheromones * (100 - evaporation-rate) / 100
+      set pcolor scale-color blue ppheromones 0.1 5
+    ] [
+      set pcolor 65
     ]
   ]
+
 end
-
-
-
-
 
 
 to check-obstacles
@@ -236,7 +222,7 @@ to touch-input
       ]
       add = "food"
       [
-        if not any? food-sources in-radius 3  [sprout-food-sources 1
+        if not any? food-sources in-radius 1  [sprout-food-sources 1
           [
             set shape "grain"
             set size 4
@@ -305,7 +291,7 @@ population
 population
 0
 100
-29.0
+25.0
 1
 1
 NIL
@@ -347,7 +333,7 @@ Abundance-of-food
 Abundance-of-food
 0
 70
-31.0
+5.0
 1
 1
 NIL
@@ -387,7 +373,7 @@ CHOOSER
 Add
 Add
 "food" "Pheromones" "Vinegar"
-0
+1
 
 PLOT
 1122
@@ -424,6 +410,36 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot count food-sources"
+
+SLIDER
+45
+377
+217
+410
+evaporation-rate
+evaporation-rate
+0
+100
+13.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+45
+428
+217
+461
+diffusion-rate
+diffusion-rate
+0
+100
+10.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
