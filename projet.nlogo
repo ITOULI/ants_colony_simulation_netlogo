@@ -239,17 +239,6 @@ to update-food-scent
   ]
 end
 
-to update-food-scent-second-one
-  diffuse food-scent (diffusion-rate / 100)
-  ask patches [
-    let food-sources-influence sum [food-scent] of food-sources in-radius 1
-    ifelse food-sources-influence > 0 [
-      set food-scent (food-scent + food-sources-influence) / 2
-    ]  [
-      set food-scent food-scent * (100 - evaporation-rate) / 100
-    ]
-  ]
-end
 
 
 to check-food
@@ -310,7 +299,7 @@ to check-obstacles-bug
   ]
 end
 
-; handles user touch input for chemicals, flowers, and vinegar
+
 to touch-input
   if mouse-down?
   [
@@ -436,7 +425,6 @@ to move-bugs
     check-obstacles-bug
   ]
 end
-
 
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -777,7 +765,7 @@ MONITOR
 1334
 47
 1431
-93
+92
 new-born-cons
 consumtion-for-new-ants
 17
