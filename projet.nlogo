@@ -35,6 +35,7 @@ food-sources-own[
 bugs-own[
   health-points
   nb-links
+  is-dead
 ]
 ;======================;
 ;---Setup procedures---;
@@ -56,6 +57,7 @@ to setup-global-vars
   set dead-ants 0
   set dead-bugs 0
   set consumtion-for-new-ants 0
+  set ant-count 0
 end
 
 to setup-patches
@@ -122,8 +124,11 @@ to go
   touch-input
   add_food amount-food-regen 100
   ants_regen ants-regeneration-rate 100
-  create-bug
+  add-bug 500
   move-bugs
+  if count(ants) = 0[
+    stop
+  ]
   tick
   wait 0.05
 end
@@ -365,20 +370,27 @@ to ants_regen [some prob]
           set health-points 100
           set age 0
         ]
+        set ant-count ant-count + 1
       ]
     ]
   ]
 end
 
-to create-bug
-  if ticks mod 1000 = 0 [
-    create-bugs 1 [
-      set shape "spider"
-      set color black
-      set size 5
-      set nb-links 3
-      setxy random-xcor random-ycor
-      set health-points 500
+to add-bug [prob]
+  if random prob < 1
+  [
+    ask n-of 1 patches
+    [
+      sprout-bugs 1
+      [
+        set shape "spider"
+        set color black
+        set size 5
+        set is-dead 0
+        set nb-links 3
+        setxy random-xcor random-ycor
+        set health-points 500
+      ]
     ]
   ]
 end
@@ -388,7 +400,7 @@ to attack-ant
   if any? potential-targets [
     let target one-of potential-targets
     ask target [
-      set health-points health-points - 0.5
+      set health-points health-points - 5
     ]
   ]
 end
@@ -418,49 +430,49 @@ to move-bugs
   ask bugs [
     ifelse health-points > 0 [
       attack-ant
+      check-obstacles-bug
       fd 0.6
       wiggle
     ][
+      set is-dead 1
       set color red
     ]
-    check-obstacles-bug
   ]
 end
 
 
+
 to take-bug-to-nest
   ask ants [
-    let target-bug one-of bugs in-radius 2
-    if target-bug != nobody [
-      let health [health-points] of target-bug
-      if  health <= 0 [
-        ifelse has-food = 0 [
-          let bug-links [nb-links] of target-bug
-          if bug-links < 2[
-            ; Pick up food
-            set has-food 1
-            create-link-with target-bug [tie]
-            ask target-bug [set nb-links nb-links + 1 ]
-          ]
-        ] [
-          ;stock food
-          if distance patch nest-x nest-y < 4 [
-            set food-stock food-stock + 3
-            ask target-bug [die]
-            set has-food 0 ; Reset has-food flag
-          ]
+    let target-bug one-of bugs in-radius 5
+    if target-bug != nobody[
+      ifelse has-food = 0 [
+        let bug-links [nb-links] of target-bug
+        let dead-bug [is-dead] of target-bug
+        if bug-links < 4 and dead-bug = 1[
+          ; Pick up bug
+          set has-food 1
+          create-link-with target-bug [tie]
+          ask target-bug [set nb-links nb-links + 1 ]
+        ]
+      ] [
+        ;stock food
+        if distance patch nest-x nest-y < 4 [
+          set food-stock food-stock + 3
+          ask target-bug [die]
+          set dead-bugs dead-bugs + 1
+          set has-food 0 ; Reset has-food flag
         ]
       ]
     ]
   ]
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
-206
-16
-1007
-558
+207
+34
+1008
+576
 -1
 -1
 13.0
@@ -516,10 +528,10 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-2
-19
-235
-69
+12
+12
+245
+62
 Ants colony simulation
 20
 13.0
@@ -551,7 +563,7 @@ Abundance-of-food
 Abundance-of-food
 0
 70
-16.0
+14.0
 1
 1
 NIL
@@ -573,10 +585,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-1009
-49
-1083
-94
+1010
+64
+1084
+109
 NIL
 food-stock
 5
@@ -594,10 +606,10 @@ Add
 0
 
 PLOT
-1012
-117
-1340
-330
+1013
+135
+1341
+348
 food abundance
 time
 food
@@ -621,7 +633,7 @@ evaporation-rate
 evaporation-rate
 0
 100
-19.0
+13.0
 1
 1
 NIL
@@ -636,7 +648,7 @@ diffusion-rate
 diffusion-rate
 0
 100
-14.0
+18.0
 1
 1
 NIL
@@ -651,17 +663,17 @@ amount-food-regen
 amount-food-regen
 0
 15
-3.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1092
-48
-1168
-93
+1093
+63
+1169
+108
 NIL
 dead-ants
 17
@@ -669,10 +681,10 @@ dead-ants
 11
 
 MONITOR
-1174
-48
-1247
-93
+1175
+63
+1248
+108
 Ants
 count ants
 17
@@ -695,15 +707,15 @@ NIL
 HORIZONTAL
 
 PLOT
-1012
-338
-1240
-560
+1013
+356
+1241
+578
 Ants
 NIL
 NIL
 0.0
-100.0
+300.0
 0.0
 10.0
 true
@@ -712,12 +724,14 @@ true
 PENS
 "alive ants" 1.0 0 -14439633 true "" "plot count ants"
 "dead ants" 1.0 0 -5298144 true "" "plot dead-ants"
+"Bugs" 1.0 0 -10022847 true "" "plot count bugs"
+"pen-3" 1.0 0 -11783835 true "" "plot dead-bugs"
 
 MONITOR
-1254
-48
-1329
-93
+1255
+63
+1349
+109
 Bugs
 count bugs
 17
@@ -736,29 +750,29 @@ Play around with these sliders
 
 TEXTBOX
 1014
-97
+116
 1309
-129
+148
 Plotting food and ants population
-13
+14
 0.0
 1
 
 TEXTBOX
-1013
-25
-1163
-43
+1020
+28
+1170
+46
 Monitors
-13
+15
 0.0
 1
 
 PLOT
-1246
-338
-1539
-558
+1247
+356
+1540
+576
 plot 1
 NIL
 NIL
@@ -770,13 +784,13 @@ true
 true
 "" ""
 PENS
-"food for ant" 1.0 0 -5298144 true "" "plot log (0.000000001 + food-stock / count(ants)) 2"
+"food for ant" 1.0 0 -5298144 true "" "plot food-stock / count(ants)"
 
 PLOT
-1344
-118
-1544
-330
+1345
+136
+1545
+348
 plot 2
 NIL
 NIL
@@ -791,12 +805,34 @@ PENS
 "new born cons" 1.0 1 -11221820 true "" "plot consumtion-for-new-ants"
 
 MONITOR
-1334
-47
-1431
-92
+1093
+12
+1247
+58
 new-born-cons
 consumtion-for-new-ants
+17
+1
+11
+
+MONITOR
+1254
+12
+1349
+57
+new born ants
+ant-count
+17
+1
+11
+
+MONITOR
+1355
+12
+1428
+58
+NIL
+dead-bugs
 17
 1
 11
