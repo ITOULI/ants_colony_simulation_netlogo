@@ -2,10 +2,12 @@ breed [nests nest]
 breed [ants ant]
 breed [food-sources food-source]
 breed [obstacles obstacle]
+breed [bugs bug]
 
 
 patches-own [
   ppheromones
+  danger-ppheromones
   nest-scent
   food-scent
 ]
@@ -15,13 +17,18 @@ globals [
   nest-y
   direction
   food-stock
+  dead-ants
 ]
 ants-own[
   has-food
   health-points
+  age
 ]
 food-sources-own[
   nb-links
+]
+bugs-own[
+  health-points
 ]
 ;======================;
 ;---Setup procedures---;
@@ -29,12 +36,18 @@ food-sources-own[
 
 to setup
   clear-all
+  setup-global-vars
   setup-nest
   setup-ants
   setup-food-sources
   setup-patches
   setup-obstacles
   reset-ticks
+end
+
+to setup-global-vars
+  set food-stock 0
+  set dead-ants 0
 end
 
 to setup-patches
@@ -67,6 +80,7 @@ to setup-ants
     set has-food 0
     set direction random 360
     set health-points 100
+    set age 0
   ]
 end
 
@@ -76,7 +90,7 @@ to setup-food-sources
     set shape "grain"
     set size 4
     set nb-links 0
-    ;set food-scent 200 - distance patch-here
+    set food-scent 200 - distance patch-here
   ]
 end
 
@@ -96,7 +110,10 @@ end
 to go
   move-ants
   touch-input
-  add_food amounts-of-food-added-in-100-ticks 100
+  add_food amount-food-regen 100
+  ants_regen ants-regeneration-rate 100
+  create-bug
+  move-bugs
   tick
   wait 0.05
 end
@@ -107,7 +124,15 @@ to move-ants
     wiggle
     check-obstacles
     set health-points health-points - 0.1
-    if health-points <= 0 [die]
+    set age age + 0.05
+    if health-points <= 0 or age > 100[
+        set dead-ants dead-ants + 1
+      if has-food = 1 [
+        let target-food one-of food-sources in-radius 2
+        ask target-food  [set nb-links 0]
+      ]
+      die
+    ]
     if (distancexy nest-x nest-y ) <= 2[
       if health-points <= 98 and food-stock > 1 [ set health-points health-points + 1 set food-stock food-stock - 0.02]
     ]
@@ -118,8 +143,7 @@ to move-ants
         set ppheromones ppheromones + 60  ; Increase pheromone levels on nearby patches
       ]
     ][
-
-      ifelse (ppheromones >= 0.05) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
+      ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
       check-food
       ]
     ]
@@ -240,7 +264,7 @@ to visualize-pheromones
 
   ask patches
   [
-    ifelse ppheromones > 2 [
+    ifelse ppheromones > 1.5 [
       set ppheromones ppheromones * (100 - evaporation-rate) / 100
       set pcolor scale-color blue ppheromones 0.1 5
     ] [
@@ -307,12 +331,73 @@ to add_food [some prob] ; adds some grains to the view at some rate with prob li
     ]
   ]
 end
+
+to ants_regen [some prob]
+  if food-stock > ants-regeneration-rate [
+    if random prob < 1 [
+      ask n-of some patches
+      [
+        set food-stock food-stock - ants-regeneration-rate
+        sprout-ants some
+        [
+          setxy nest-x nest-y
+          set size 2
+          set color black
+          set has-food 0
+          set direction random 360
+          set health-points 100
+          set age 0
+        ]
+      ]
+    ]
+  ]
+end
+
+to create-bug
+  if ticks mod 1000 = 0 [
+    create-bugs 1 [
+      set shape "spider"
+      set color black
+      set size 5
+      setxy random-xcor random-ycor
+      set health-points 100
+    ]
+  ]
+end
+
+to attack-ant
+  let potential-targets ants in-radius 2
+  if any? potential-targets [
+    let target one-of potential-targets
+    ask target [
+      set health-points health-points - 10
+    ]
+  ]
+end
+
+to ants-def
+  let potential-targets bugs in-radius 2
+  if any? potential-targets [
+    let target one-of potential-targets
+    ask target [
+      set health-points health-points - 10
+    ]
+  ]
+end
+
+to move-bugs
+  ask bugs [
+    wiggle
+    fd 0.6
+    attack-ant
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-297
-10
-1098
-552
+215
+12
+1016
+554
 -1
 -1
 13.0
@@ -336,10 +421,10 @@ ticks
 30.0
 
 BUTTON
-47
-131
-110
-164
+18
+67
+101
+101
 NIL
 setup
 NIL
@@ -353,35 +438,35 @@ NIL
 1
 
 SLIDER
-47
-249
-219
-282
+15
+240
+187
+273
 population
 population
 0
 100
-6.0
+20.0
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-34
-23
-267
-73
+9
+12
+242
+62
 Ants colony simulation
 20
 0.0
 1
 
 BUTTON
-153
-130
-216
-163
+112
+67
+190
+101
 NIL
 go
 T
@@ -395,40 +480,40 @@ NIL
 1
 
 SLIDER
-50
-74
-222
-107
+15
+159
+187
+192
 Abundance-of-food
 Abundance-of-food
 0
 70
-6.0
+30.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-47
-190
-219
-223
+15
+199
+187
+232
 Number-of-obstacles
 Number-of-obstacles
 0
 50
-3.0
+9.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1120
-23
-1194
-68
+1024
+12
+1098
+57
 NIL
 food-stock
 5
@@ -436,95 +521,145 @@ food-stock
 11
 
 CHOOSER
-46
-311
-220
-356
+14
+284
+188
+329
 Add
 Add
 "food" "Pheromones" "Vinegar"
-0
+1
 
 PLOT
-1108
-71
-1495
-305
-ants 
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot count ants"
-
-PLOT
-1109
-315
-1496
-550
-abundance of food out of nest 
+1025
+66
+1477
+300
+food abundance
 time
 food
 0.0
-10.0
+100.0
 0.0
 10.0
 true
-false
+true
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count food-sources"
+"food stock" 1.0 0 -13840069 true "" "plot food-stock"
+"food source" 1.0 0 -1184463 true "" "plot count food-sources"
 
 SLIDER
-45
-377
-217
-410
+14
+336
+186
+369
 evaporation-rate
 evaporation-rate
 0
 100
-24.0
+17.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-45
-428
-217
-461
+15
+379
+187
+412
 diffusion-rate
 diffusion-rate
 0
 100
-13.0
+8.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-30
-469
-262
-502
-amounts-of-food-added-in-100-ticks
-amounts-of-food-added-in-100-ticks
+16
+419
+189
+453
+amount-food-regen
+amount-food-regen
 0
 15
-0.0
+2.0
 1
 1
 NIL
 HORIZONTAL
+
+MONITOR
+1106
+12
+1182
+58
+NIL
+dead-ants
+17
+1
+11
+
+MONITOR
+1188
+12
+1261
+58
+NIL
+count ants
+17
+1
+11
+
+SLIDER
+13
+457
+192
+491
+ants-regeneration-rate
+ants-regeneration-rate
+1
+3
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+PLOT
+1026
+306
+1264
+555
+Ants
+NIL
+NIL
+0.0
+100.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"alive ants" 1.0 0 -14439633 true "" "plot count ants"
+"dead ants" 1.0 0 -5298144 true "" "plot dead-ants"
+
+MONITOR
+1268
+13
+1343
+59
+NIL
+count bugs
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -805,6 +940,23 @@ Rectangle -1 true true 65 221 80 296
 Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
 Polygon -7500403 true false 276 85 285 105 302 99 294 83
 Polygon -7500403 true false 219 85 210 105 193 99 201 83
+
+spider
+true
+0
+Polygon -7500403 true true 134 255 104 240 96 210 98 196 114 171 134 150 119 135 119 120 134 105 164 105 179 120 179 135 164 150 185 173 199 195 203 210 194 240 164 255
+Line -7500403 true 167 109 170 90
+Line -7500403 true 170 91 156 88
+Line -7500403 true 130 91 144 88
+Line -7500403 true 133 109 130 90
+Polygon -7500403 true true 167 117 207 102 216 71 227 27 227 72 212 117 167 132
+Polygon -7500403 true true 164 210 158 194 195 195 225 210 195 285 240 210 210 180 164 180
+Polygon -7500403 true true 136 210 142 194 105 195 75 210 105 285 60 210 90 180 136 180
+Polygon -7500403 true true 133 117 93 102 84 71 73 27 73 72 88 117 133 132
+Polygon -7500403 true true 163 140 214 129 234 114 255 74 242 126 216 143 164 152
+Polygon -7500403 true true 161 183 203 167 239 180 268 239 249 171 202 153 163 162
+Polygon -7500403 true true 137 140 86 129 66 114 45 74 58 126 84 143 136 152
+Polygon -7500403 true true 139 183 97 167 61 180 32 239 51 171 98 153 137 162
 
 square
 false
