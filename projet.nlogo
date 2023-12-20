@@ -18,8 +18,13 @@ globals [
   direction
   food-stock
   dead-ants
+  dead-bugs
+  total-ant-age
+  ant-count
+  consumtion-for-new-ants
 ]
 ants-own[
+  has-target
   has-food
   health-points
   age
@@ -29,6 +34,7 @@ food-sources-own[
 ]
 bugs-own[
   health-points
+  nb-links
 ]
 ;======================;
 ;---Setup procedures---;
@@ -48,6 +54,8 @@ end
 to setup-global-vars
   set food-stock 0
   set dead-ants 0
+  set dead-bugs 0
+  set consumtion-for-new-ants 0
 end
 
 to setup-patches
@@ -55,6 +63,7 @@ to setup-patches
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
     set ppheromones 0
+    set danger-ppheromones 0
     set food-scent 0
   ]
 end
@@ -77,6 +86,7 @@ to setup-ants
     setxy nest-x nest-y
     set size 2
     set color black
+    set has-target 0
     set has-food 0
     set direction random 360
     set health-points 100
@@ -120,6 +130,7 @@ end
 
 to move-ants
   ask ants [
+    check-treats
     forward 1
     wiggle
     check-obstacles
@@ -136,7 +147,7 @@ to move-ants
     if (distancexy nest-x nest-y ) <= 2[
       if health-points <= 98 and food-stock > 1 [ set health-points health-points + 1 set food-stock food-stock - 0.02]
     ]
-    ifelse has-food = 1 [
+    ifelse has-food = 1[
       uphill-nest-scent
       let target-patches patches in-radius 1 ; Define patches within a radius around the ant
       ask target-patches [
@@ -146,6 +157,13 @@ to move-ants
       ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
       check-food
       ]
+    if health-points < 50 and food-stock >= 0.3 [
+      uphill-nest-scent
+      if (distancexy nest-x nest-y ) <= 2[
+        set health-points 100
+        set food-stock food-stock - 0.3
+      ]
+    ]
     ]
   update-food-scent
   visualize-pheromones
@@ -184,12 +202,12 @@ to uphill-pheromones  ; turtle procedure. sniff left and right, and go where the
       [ lt 45 ]
   ]
 end
+
 to-report chemical-scent-at-angle [angle] ; reports the amount of pheromone in a certain direction
   let p patch-right-and-ahead angle 1
   if p = nobody [ report 0 ]
   report [ppheromones] of p
 end
-
 
 to uphill-food-scent  ; turtle procedure. sniff left and right, and go where the strongest smell is
   let scent-ahead food-scent-at-angle   0
@@ -274,10 +292,18 @@ to visualize-pheromones
 
 end
 
-
 to check-obstacles
   ask ants [
     let target-obstacle one-of obstacles in-radius 3
+    if target-obstacle != nobody[
+       right random 90
+    ]
+  ]
+end
+
+to check-obstacles-bug
+  ask bugs [
+    let target-obstacle one-of obstacles in-radius 1
     if target-obstacle != nobody[
        right random 90
     ]
@@ -333,11 +359,12 @@ to add_food [some prob] ; adds some grains to the view at some rate with prob li
 end
 
 to ants_regen [some prob]
-  if food-stock > ants-regeneration-rate [
+  if round(food-stock) > ants-regeneration-rate [
     if random prob < 1 [
       ask n-of some patches
       [
-        set food-stock food-stock - ants-regeneration-rate
+        set food-stock food-stock - ants-regeneration-rate / 2
+        set consumtion-for-new-ants consumtion-for-new-ants + ants-regeneration-rate / 2
         sprout-ants some
         [
           setxy nest-x nest-y
@@ -359,8 +386,9 @@ to create-bug
       set shape "spider"
       set color black
       set size 5
+      set nb-links 3
       setxy random-xcor random-ycor
-      set health-points 100
+      set health-points 500
     ]
   ]
 end
@@ -370,34 +398,52 @@ to attack-ant
   if any? potential-targets [
     let target one-of potential-targets
     ask target [
-      set health-points health-points - 10
+      set health-points health-points - 0.5
     ]
   ]
 end
 
-to ants-def
-  let potential-targets bugs in-radius 2
-  if any? potential-targets [
-    let target one-of potential-targets
-    ask target [
-      set health-points health-points - 10
+to check-treats
+  ask ants [
+    let potential-targets bugs in-radius 5
+    if any? potential-targets [
+      let target one-of potential-targets
+      if [health-points] of target > 0 and has-food = 0 [
+        ifelse distance target > 3 ; Adjust the distance threshold as needed
+        [
+          face target
+        ]
+        [
+          set has-target 0
+          ask target [
+            set health-points health-points - 0.05
+          ]
+        ]
+      ]
     ]
   ]
 end
 
 to move-bugs
   ask bugs [
-    wiggle
-    fd 0.6
-    attack-ant
+    ifelse health-points > 0 [
+      attack-ant
+      fd 0.6
+      wiggle
+    ][
+      set color red
+    ]
+    check-obstacles-bug
   ]
 end
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-215
-12
-1016
-554
+206
+16
+1007
+558
 -1
 -1
 13.0
@@ -421,10 +467,10 @@ ticks
 30.0
 
 BUTTON
-18
-67
-101
-101
+16
+64
+99
+98
 NIL
 setup
 NIL
@@ -453,20 +499,20 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-9
-12
-242
-62
+2
+19
+235
+69
 Ants colony simulation
 20
-0.0
+13.0
 1
 
 BUTTON
-112
-67
-190
-101
+109
+64
+187
+98
 NIL
 go
 T
@@ -488,7 +534,7 @@ Abundance-of-food
 Abundance-of-food
 0
 70
-30.0
+16.0
 1
 1
 NIL
@@ -503,17 +549,17 @@ Number-of-obstacles
 Number-of-obstacles
 0
 50
-9.0
+15.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1024
-12
-1098
-57
+1009
+49
+1083
+94
 NIL
 food-stock
 5
@@ -521,20 +567,20 @@ food-stock
 11
 
 CHOOSER
-14
-284
-188
-329
+16
+507
+190
+552
 Add
 Add
 "food" "Pheromones" "Vinegar"
-1
+0
 
 PLOT
-1025
-66
-1477
-300
+1012
+117
+1340
+330
 food abundance
 time
 food
@@ -550,55 +596,55 @@ PENS
 "food source" 1.0 0 -1184463 true "" "plot count food-sources"
 
 SLIDER
-14
-336
-186
-369
-evaporation-rate
-evaporation-rate
-0
-100
-17.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-379
-187
-412
-diffusion-rate
-diffusion-rate
-0
-100
-8.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
 16
-419
+282
+188
+315
+evaporation-rate
+evaporation-rate
+0
+100
+19.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+17
+325
 189
-453
+358
+diffusion-rate
+diffusion-rate
+0
+100
+14.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+18
+365
+191
+398
 amount-food-regen
 amount-food-regen
 0
 15
-2.0
+3.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1106
-12
-1182
-58
+1092
+48
+1168
+93
 NIL
 dead-ants
 17
@@ -606,21 +652,21 @@ dead-ants
 11
 
 MONITOR
-1188
-12
-1261
-58
-NIL
+1174
+48
+1247
+93
+Ants
 count ants
 17
 1
 11
 
 SLIDER
-13
-457
-192
-491
+15
+403
+194
+436
 ants-regeneration-rate
 ants-regeneration-rate
 1
@@ -632,10 +678,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1026
-306
-1264
-555
+1012
+338
+1240
+560
 Ants
 NIL
 NIL
@@ -651,12 +697,89 @@ PENS
 "dead ants" 1.0 0 -5298144 true "" "plot dead-ants"
 
 MONITOR
-1268
-13
-1343
-59
-NIL
+1254
+48
+1329
+93
+Bugs
 count bugs
+17
+1
+11
+
+TEXTBOX
+16
+135
+224
+168
+Play around with these sliders
+13
+0.0
+1
+
+TEXTBOX
+1014
+97
+1309
+129
+Plotting food and ants population
+13
+0.0
+1
+
+TEXTBOX
+1013
+25
+1163
+43
+Monitors
+13
+0.0
+1
+
+PLOT
+1246
+338
+1539
+558
+plot 1
+NIL
+NIL
+0.0
+50.0
+0.0
+2.0
+true
+true
+"" ""
+PENS
+"food for ant" 1.0 0 -5298144 true "" "plot log (0.000000001 + food-stock / count(ants)) 2"
+
+PLOT
+1344
+118
+1544
+330
+plot 2
+NIL
+NIL
+0.0
+100.0
+0.0
+50.0
+true
+true
+"" ""
+PENS
+"new born cons" 1.0 1 -11221820 true "" "plot consumtion-for-new-ants"
+
+MONITOR
+1334
+47
+1431
+93
+new-born-cons
+consumtion-for-new-ants
 17
 1
 11
