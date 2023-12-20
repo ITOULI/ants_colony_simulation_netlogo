@@ -156,6 +156,7 @@ to move-ants
     ][
       ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
       check-food
+      take-bug-to-nest
       ]
     if health-points < 50 and food-stock >= 0.3 [
       uphill-nest-scent
@@ -423,6 +424,34 @@ to move-bugs
       set color red
     ]
     check-obstacles-bug
+  ]
+end
+
+
+to take-bug-to-nest
+  ask ants [
+    let target-bug one-of bugs in-radius 2
+    if target-bug != nobody [
+      let health [health-points] of target-bug
+      if  health <= 0 [
+        ifelse has-food = 0 [
+          let bug-links [nb-links] of target-bug
+          if bug-links < 2[
+            ; Pick up food
+            set has-food 1
+            create-link-with target-bug [tie]
+            ask target-bug [set nb-links nb-links + 1 ]
+          ]
+        ] [
+          ;stock food
+          if distance patch nest-x nest-y < 4 [
+            set food-stock food-stock + 3
+            ask target-bug [die]
+            set has-food 0 ; Reset has-food flag
+          ]
+        ]
+      ]
+    ]
   ]
 end
 
