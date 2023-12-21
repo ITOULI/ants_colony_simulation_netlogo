@@ -159,7 +159,7 @@ to move-ants
         set ppheromones ppheromones + 60  ; Increase pheromone levels on nearby patches
       ]
     ][
-      ifelse (danger-pheromones >= 1 )[uphill-danger-pheromones][ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]]
+      ifelse (danger-pheromones >= 2 )[uphill-danger-pheromones][ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]]
       check-food
       take-bug-to-nest
       ]
@@ -366,14 +366,13 @@ to touch-input
         ]
         add = "Danger"
         [
-          if not any? bugs in-radius 1  [sprout-bugs 1
+          if not any? bugs in-radius 8  [sprout-bugs 1
             [
               set shape "spider"
               set color black
               set size 5
               set is-dead 0
               set nb-links 3
-              setxy random-xcor random-ycor
               set health-points 500
             ]
           ]
@@ -657,7 +656,7 @@ CHOOSER
 Add
 Add
 "food" "Pheromones" "Vinegar" "Danger"
-2
+3
 
 PLOT
 1013
