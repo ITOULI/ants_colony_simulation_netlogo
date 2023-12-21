@@ -7,7 +7,7 @@ breed [bugs bug]
 
 patches-own [
   ppheromones
-  danger-ppheromones
+  danger-pheromones
   nest-scent
   food-scent
 ]
@@ -65,7 +65,7 @@ to setup-patches
     set pcolor 65
     set nest-scent 200 - distancexy nest-x nest-y
     set ppheromones 0
-    set danger-ppheromones 0
+    set danger-pheromones 0
     set food-scent 0
   ]
 end
@@ -159,7 +159,7 @@ to move-ants
         set ppheromones ppheromones + 60  ; Increase pheromone levels on nearby patches
       ]
     ][
-      ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]
+      ifelse (danger-pheromones >= 1 )[uphill-danger-pheromones][ifelse (ppheromones >= 2) [ uphill-pheromones ] [ if (food-scent >= 0.05) [uphill-food-scent]]]
       check-food
       take-bug-to-nest
       ]
@@ -173,6 +173,7 @@ to move-ants
     ]
   update-food-scent
   visualize-pheromones
+  visualize-danger-pheromones
 end
 
 to wiggle  ;; turtle procedure
@@ -245,6 +246,23 @@ to update-food-scent
   ]
 end
 
+to uphill-danger-pheromones  ; turtle procedure. sniff left and right, and go where the strongest smell is
+  let scent-ahead chemical-danger-scent-at-angle   0
+  let scent-right chemical-danger-scent-at-angle  45
+  let scent-left  chemical-danger-scent-at-angle -45
+  if (scent-right > scent-ahead) or (scent-left > scent-ahead)
+  [
+    ifelse scent-right > scent-left
+      [ rt 45 ]
+      [ lt 45 ]
+  ]
+end
+
+to-report chemical-danger-scent-at-angle [angle] ; reports the amount of pheromone in a certain direction
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [danger-pheromones] of p
+end
 
 
 to check-food
@@ -287,6 +305,20 @@ to visualize-pheromones
 
 end
 
+
+to visualize-danger-pheromones
+  diffuse danger-pheromones (diffusion-rate / 100)
+
+  ask patches
+  [
+    if danger-pheromones > 1.5 [
+      set danger-pheromones danger-pheromones * (100 - evaporation-rate) / 100
+      set pcolor scale-color red danger-pheromones 0.1 5
+    ]
+  ]
+
+end
+
 to check-obstacles
   ask ants [
     let target-obstacle one-of obstacles in-radius 3
@@ -311,27 +343,42 @@ to touch-input
   [
     ask patch mouse-xcor mouse-ycor
     [
-    (ifelse
-      add = "Pheromones"
-      [
-        ask neighbors [set ppheromones ppheromones + 15  ]
-      ]
-      add = "food"
-      [
-        if not any? food-sources in-radius 1  [sprout-food-sources 1
-          [
-            set shape "grain"
-            set size 4
-            set nb-links 0
-            set food-scent 200 - distance patch-here
+      (ifelse
+        add = "Pheromones"
+        [
+          ask neighbors [set ppheromones ppheromones + 15  ]
+        ]
+        add = "food"
+        [
+          if not any? food-sources in-radius 1  [sprout-food-sources 1
+            [
+              set shape "grain"
+              set size 4
+              set nb-links 0
+              set food-scent 200 - distance patch-here
+            ]
           ]
         ]
-      ]
-      add = "Vinegar"
-      [
-        set ppheromones 0 ask neighbors [set ppheromones 0  ]
-      ]
-    )
+        add = "Vinegar"
+        [
+          set ppheromones 0 ask neighbors [set ppheromones 0  ]
+          set danger-pheromones 0 ask neighbors [set danger-pheromones 0  ]
+        ]
+        add = "Danger"
+        [
+          if not any? bugs in-radius 1  [sprout-bugs 1
+            [
+              set shape "spider"
+              set color black
+              set size 5
+              set is-dead 0
+              set nb-links 3
+              setxy random-xcor random-ycor
+              set health-points 500
+            ]
+          ]
+        ]
+      )
     ]
   ]
 end
@@ -414,6 +461,10 @@ to check-treats
         ifelse distance target > 3 ; Adjust the distance threshold as needed
         [
           face target
+          let target-patches patches in-radius 1
+          ask target-patches [
+            set danger-pheromones danger-pheromones + 60
+          ]
         ]
         [
           set has-target 0
@@ -424,7 +475,10 @@ to check-treats
       ]
     ]
   ]
+
 end
+
+
 
 to move-bugs
   ask bugs [
@@ -602,8 +656,8 @@ CHOOSER
 552
 Add
 Add
-"food" "Pheromones" "Vinegar"
-0
+"food" "Pheromones" "Vinegar" "Danger"
+2
 
 PLOT
 1013
@@ -633,7 +687,7 @@ evaporation-rate
 evaporation-rate
 0
 100
-13.0
+23.0
 1
 1
 NIL
@@ -648,7 +702,7 @@ diffusion-rate
 diffusion-rate
 0
 100
-18.0
+7.0
 1
 1
 NIL
@@ -731,7 +785,7 @@ MONITOR
 1255
 63
 1349
-109
+108
 Bugs
 count bugs
 17
@@ -773,7 +827,7 @@ PLOT
 356
 1540
 576
-plot 1
+The quantity of food for each ant
 NIL
 NIL
 0.0
@@ -781,7 +835,7 @@ NIL
 0.0
 2.0
 true
-true
+false
 "" ""
 PENS
 "food for ant" 1.0 0 -5298144 true "" "plot food-stock / count(ants)"
@@ -791,7 +845,7 @@ PLOT
 136
 1545
 348
-plot 2
+new born ants consumtion
 NIL
 NIL
 0.0
@@ -799,7 +853,7 @@ NIL
 0.0
 50.0
 true
-true
+false
 "" ""
 PENS
 "new born cons" 1.0 1 -11221820 true "" "plot consumtion-for-new-ants"
@@ -808,7 +862,7 @@ MONITOR
 1093
 12
 1247
-58
+57
 new-born-cons
 consumtion-for-new-ants
 17
@@ -830,7 +884,7 @@ MONITOR
 1355
 12
 1428
-58
+57
 NIL
 dead-bugs
 17
