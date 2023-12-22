@@ -76,7 +76,7 @@ to setup-nest
   create-nests 1 [
     set shape "circle 2"
     setxy nest-x nest-y
-    set size 2
+    set size 3
     set color brown - 2
     set food-stock 0
   ]
@@ -110,7 +110,6 @@ to setup-obstacles
   create-obstacles Number-of-obstacles [
     setxy random-xcor random-ycor
     set shape "stone"
-    set color 33
     set size random 4 + 2
   ]
 end
@@ -126,9 +125,7 @@ to go
   ants_regen ants-regeneration-rate 100
   add-bug 500
   move-bugs
-  if count(ants) = 0[
-    stop
-  ]
+  if count(ants) = 0 [ stop ]
   tick
   wait 0.05
 end
@@ -279,7 +276,7 @@ to check-food
         ]
       ] [
         ;stock food
-        if distance patch nest-x nest-y < 4 [
+        if distance patch nest-x nest-y < 3 [
           set food-stock food-stock + 1
           ask target-food [die]
           set has-food 0 ; Reset has-food flag
