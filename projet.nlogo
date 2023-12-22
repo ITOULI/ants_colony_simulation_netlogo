@@ -519,10 +519,10 @@ to take-bug-to-nest
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-207
-34
-1008
-576
+197
+40
+998
+582
 -1
 -1
 13.0
@@ -656,10 +656,10 @@ Add
 3
 
 PLOT
-1013
-135
-1341
-348
+1003
+139
+1305
+352
 food abundance
 time
 food
@@ -757,10 +757,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1013
-356
-1241
-578
+1004
+357
+1232
+579
 Ants
 NIL
 NIL
@@ -819,10 +819,10 @@ Monitors
 1
 
 PLOT
-1247
-356
-1540
-576
+1237
+358
+1505
+578
 The quantity of food for each ant
 NIL
 NIL
@@ -837,10 +837,10 @@ PENS
 "food for ant" 1.0 0 -5298144 true "" "plot food-stock / count(ants)"
 
 PLOT
-1345
-136
-1545
-348
+1312
+139
+1502
+351
 new born ants consumtion
 NIL
 NIL
